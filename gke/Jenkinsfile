@@ -14,7 +14,7 @@
  * limitations under the License.
 */
 pipeline {
-    agent docker
+    agent {label'docker'}
 
     environment {
         PROJECT_ZONE = "${JENK_INT_IT_ZONE}"
