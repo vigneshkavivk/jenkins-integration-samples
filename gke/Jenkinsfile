@@ -1,5 +1,5 @@
 pipeline {
-    agent {label'trivy'}
+    agent {label'kubernetes'}
 
     environment {
         PROJECT_ZONE = "${JENK_INT_IT_ZONE}"
