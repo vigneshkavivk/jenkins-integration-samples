@@ -1,5 +1,5 @@
 pipeline {
-    agent { label 'pods' }
+    agent { label 'web' }
 
     environment {
         PROJECT_ZONE = "${JENK_INT_IT_ZONE}"
