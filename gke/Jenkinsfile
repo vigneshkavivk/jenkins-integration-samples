@@ -1,4 +1,4 @@
-netespipeline {
+pipeline {
     agent { label 'kubernetes' }
 
     environment {
