@@ -18,7 +18,8 @@ pipeline {
             agent {
                 kubernetes {
                     cloud 'kubernetes'
-                    label 'maven-pod'
+                    namespace 'devops-tools' 
+                    inheritFrom 'maven-pod'
                     yamlFile 'gke/jenkins/maven-pod.yaml'
                 }
             }
