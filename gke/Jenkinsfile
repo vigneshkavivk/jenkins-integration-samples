@@ -1,5 +1,5 @@
-pipeline {
-    agent { label 'web' }
+netespipeline {
+    agent { label 'kubernetes' }
 
     environment {
         PROJECT_ZONE = "${JENK_INT_IT_ZONE}"
