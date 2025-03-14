@@ -29,16 +29,9 @@ pipeline {
             steps {
                 container('maven') {
                     dir("gke") {
-                        // Build
                         sh "mvn clean package"
-
-                        // Run tests
                         sh "mvn verify"
-
-                        // Bundle the generated artifact
                         sh "cp target/${env.APP_NAME}-*.jar ${env.APP_JAR}"
-
-                        // Archive the build context for Kaniko
                         sh "tar --exclude='./.git' -zcvf /tmp/${env.BUILD_CONTEXT} ."
                         sh "mv /tmp/${env.BUILD_CONTEXT} ."
                         step([
@@ -72,4 +65,67 @@ pipeline {
                     --destination="${GCR_IMAGE}" --build-arg JAR_FILE="${APP_JAR}"
                     '''
                 }
-       
+            }
+        }
+
+        stage("Deploy to staging") {
+            agent {
+                kubernetes {
+                    cloud 'kubernetes'
+                    label 'gke-deploy'
+                    yamlFile 'gke/jenkins/gke-deploy-pod.yaml'
+                }
+            }
+            steps {
+                container('gke-deploy') {
+                    sh "sed -i s#IMAGE#${env.GCR_IMAGE}#g gke/kubernetes/manifest.yaml"
+                    step([
+                        $class: 'KubernetesEngineBuilder',
+                        projectId: env.PROJECT_ID,
+                        clusterName: env.STAGING_CLUSTER,
+                        location: env.PROJECT_ZONE,
+                        manifestPattern: 'gke/kubernetes/manifest.yaml',
+                        credentialsId: env.JENK_INT_IT_CRED_ID,
+                        verifyDeployments: true
+                    ])
+                }
+            }
+        }
+
+        /**
+         * Uncomment the following stage if you want manual approval before deploying to production.
+         *
+        stage('Wait for SRE Approval') {
+            steps {
+                timeout(time: 12, unit: 'HOURS') {
+                    input message: 'Approve deployment?'
+                }
+            }
+        }
+         **/
+
+        stage("Deploy to prod") {
+            agent {
+                kubernetes {
+                    cloud 'kubernetes'
+                    label 'gke-deploy'
+                    yamlFile 'gke/jenkins/gke-deploy-pod.yaml'
+                }
+            }
+            steps {
+                container('gke-deploy') {
+                    sh "sed -i s#IMAGE#${env.GCR_IMAGE}#g gke/kubernetes/manifest.yaml"
+                    step([
+                        $class: 'KubernetesEngineBuilder',
+                        projectId: env.PROJECT_ID,
+                        clusterName: env.PROD_CLUSTER,
+                        location: env.PROJECT_ZONE,
+                        manifestPattern: 'gke/kubernetes/manifest.yaml',
+                        credentialsId: env.JENK_INT_IT_CRED_ID,
+                        verifyDeployments: true
+                    ])
+                }
+            }
+        }
+    } // <-- Closing 'stages' block was missing
+} // <-- Closing 'pipeline' block was missing
